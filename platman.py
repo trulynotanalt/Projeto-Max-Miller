@@ -1,10 +1,10 @@
 import pygame
 import sys
 
-# Inicialização do Pygame
+
 pygame.init()
 
-# Configurações da tela
+
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -23,20 +23,20 @@ SKIN = (255, 224, 189)
 PURPLE = (128, 0, 128)
 ORANGE = (255, 140, 0)
 
-# Frames por segundo
+
 FPS = 60
 CLOCK = pygame.time.Clock()
 
-# Propriedades do jogador (Platman)
+
 PLATMAN_WIDTH = 40
 PLATMAN_HEIGHT = 60
 MOVE_SPEED = 5
-JUMP_SPEED = 10  # Reduzido para um pulo mais baixo
-GRAVITY = 0.7
-MAX_JUMP_TIME = 15  # Tempo máximo de pulo
-MAX_JUMP_HEIGHT = 150  # Altura máxima do pulo
+JUMP_SPEED = 9
+GRAVITY = 0.8
+MAX_JUMP_TIME = 15
+MAX_JUMP_HEIGHT = 150
 
-FADE_IN_DURATION = 1000  # duração fade in em ms
+FADE_IN_DURATION = 1000
 
 
 class Player:
@@ -47,7 +47,7 @@ class Player:
         self.vel_y = 0
         self.on_ground = False
         self.alive = True
-        self.jump_time = 0  # Novo atributo para controlar o tempo de pulo
+        self.jump_time = 0
 
     def move(self, dx, platforms):
         self.x += dx
@@ -86,28 +86,26 @@ class Player:
 
     def jump(self):
         if self.on_ground:
-            self.jump_time = 0  # Reinicia o tempo de pulo
-            self.vel_y = -JUMP_SPEED  # Aplica a velocidade inicial de pulo
+            self.jump_time = 0
+            self.vel_y = -JUMP_SPEED
 
     def update_jump(self, keys):
-        if keys[pygame.K_SPACE] or keys[pygame.K_w]:  # Se a tecla de pulo estiver pressionada
-            if self.jump_time < MAX_JUMP_TIME:  # Limita o tempo de pulo
-                self.jump_time += 1  # Aumenta o tempo de pulo
-                # Aumenta a velocidade de pulo proporcional ao tempo segurado, mas limita a altura
-                self.vel_y = -JUMP_SPEED * (1 + (self.jump_time / MAX_JUMP_TIME))  
+        if keys[pygame.K_SPACE] or keys[pygame.K_w]:
+            if self.jump_time < MAX_JUMP_TIME:
+                self.jump_time += 1
+                self.vel_y = -JUMP_SPEED * (1 + (self.jump_time / MAX_JUMP_TIME))
                 if self.rect.y <= SCREEN_HEIGHT - PLATMAN_HEIGHT - MAX_JUMP_HEIGHT:
-                    self.vel_y = -JUMP_SPEED  # Limita a altura do pulo
+                    self.vel_y = -JUMP_SPEED
         else:
-            self.jump_time = MAX_JUMP_TIME  # Se a tecla não estiver pressionada, finaliza o pulo
+            self.jump_time = MAX_JUMP_TIME
 
     def draw(self, surface, offset_x):
         draw_rect = pygame.Rect(self.rect)
         draw_rect.x -= offset_x
-        pygame.draw.rect(surface, WHITE, draw_rect)  # Roupa branca
+        pygame.draw.rect(surface, WHITE, draw_rect)
 
-        # Desenhar sapatos pretos
-        shoe_rect = pygame.Rect(draw_rect.x, draw_rect.y + PLATMAN_HEIGHT - 10, PLATMAN_WIDTH, 10)  # Ajuste para a parte inferior
-        pygame.draw.rect(surface, BLACK, shoe_rect)  # Sapatos pretos
+        shoe_rect = pygame.Rect(draw_rect.x, draw_rect.y + PLATMAN_HEIGHT - 10, PLATMAN_WIDTH, 10)
+        pygame.draw.rect(surface, BLACK, shoe_rect)
 
         face_center = (draw_rect.x + PLATMAN_WIDTH // 2, draw_rect.y + 20)
         pygame.draw.circle(surface, SKIN, face_center, 12)
@@ -119,7 +117,7 @@ class Player:
 
 class Enemy:
     def __init__(self, patrol_platform, speed=2):
-        self.patrol_platform = patrol_platform  # plataforma que sustenta o inimigo
+        self.patrol_platform = patrol_platform
         self.width = 40
         self.height = 40
         self.speed = speed
@@ -128,13 +126,10 @@ class Enemy:
         self.on_ground = False
         self.alive = True
 
-        # Inicializar posição X na plataforma
         self.x = float(self.patrol_platform.left + 10)
-        # Ajustar Y para o topo da plataforma (inimigo "em pé" na plataforma)
         self.y = float(self.patrol_platform.top - self.height)
         self.rect = pygame.Rect(int(self.x), int(self.y), self.width, self.height)
 
-        # Definir range de patrulha para a largura da plataforma menos margem para inimigo
         self.patrol_start = self.patrol_platform.left + 5
         self.patrol_end = self.patrol_platform.right - self.width - 5
 
@@ -173,7 +168,6 @@ class Enemy:
             return
 
         next_x = self.x + self.speed * self.direction
-        # Evitar que o próximo movimento fique fora do range da plataforma
         if next_x < self.patrol_start:
             self.direction = 1
             next_x = self.patrol_start
@@ -184,9 +178,7 @@ class Enemy:
         self.x = next_x
         self.rect.x = int(self.x)
 
-        # Aplicar gravidade para garantir inimigo fica na plataforma
         self.apply_gravity(platforms)
-        # Corrigir Y se estiver abaixo da plataforma (baixa posição)
         if self.rect.bottom > self.patrol_platform.top:
             self.rect.bottom = self.patrol_platform.top
             self.y = self.rect.y
@@ -220,11 +212,8 @@ class Gate:
         pygame.draw.rect(surface, WHITE, inner_rect)
 
 
-# Definição das fases que serão carregadas sequencialmente
-# Que agora possuem portão de entrada e saída com cores diferentes
 phases = [
 
-    # Fase 1
     {
         "ground_platforms": [
             pygame.Rect(0, SCREEN_HEIGHT - 40, 400, 40),
@@ -244,14 +233,13 @@ phases = [
             pygame.Rect(1650, 450, 120, 20),
             pygame.Rect(1900, 350, 100, 20),
         ],
-        "enemies_platform_indices": [1, 3, 6, 7],  # Índices de plataformas onde colocar inimigos na fase 1
+        "enemies_platform_indices": [1, 3, 6, 7],
         "enemies_speeds": [2, 1.5, 2.5, 3],
-        "gate_start_pos": None,      # Porta de entrada da fase 1 (nenhuma)
+        "gate_start_pos": None,
         "gate_exit_pos": (2300, SCREEN_HEIGHT - 40 - 80),
         "gate_exit_color": PURPLE,
     },
 
-    # Fase 2 (exemplo)
     {
         "ground_platforms": [
             pygame.Rect(0, SCREEN_HEIGHT - 40, 300, 40),
@@ -274,9 +262,9 @@ phases = [
         ],
         "enemies_platform_indices": [1, 3, 5, 7],
         "enemies_speeds": [2.5, 1.7, 3, 2],
-        "gate_start_pos": (10, SCREEN_HEIGHT - 40 - 80),  # Portão para voltar à fase 1 - cor laranja
+        "gate_start_pos": (10, SCREEN_HEIGHT - 40 - 80),
         "gate_start_color": ORANGE,
-        "gate_exit_pos": (2600, SCREEN_HEIGHT - 40 - 80), # Portão para próxima fase (final)
+        "gate_exit_pos": (2600, SCREEN_HEIGHT - 40 - 80),
         "gate_exit_color": PURPLE,
     }
 ]
@@ -305,8 +293,40 @@ def load_phase(phase_index):
 
     return platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit
 
+def start_screen():
+    font_title = pygame.font.SysFont(None, 70)
+    font_options = pygame.font.SysFont(None, 50)
+
+    title_text = font_title.render("Platman Game", True, WHITE)
+    play_text = font_options.render("Jogar", True, WHITE)
+    exit_text = font_options.render("Sair", True, WHITE)
+
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+    play_rect = play_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+    exit_rect = exit_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_rect.collidepoint(event.pos):
+                    return True
+                if exit_rect.collidepoint(event.pos):
+                    return False
+
+        SCREEN.fill(BLUE)
+        SCREEN.blit(title_text, title_rect)
+        SCREEN.blit(play_text, play_rect)
+        SCREEN.blit(exit_text, exit_rect)
+        pygame.display.flip()
+        CLOCK.tick(FPS)
 
 def main():
+    if not start_screen():
+        pygame.quit()
+        sys.exit()
+
     current_phase = 0
     platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit = load_phase(current_phase)
 
@@ -335,10 +355,9 @@ def main():
             if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 dx = MOVE_SPEED
             
-            # Atualiza a lógica do pulo
             if (keys[pygame.K_SPACE] or keys[pygame.K_w]) and player.on_ground:
                 player.jump()
-            player.update_jump(keys)  # Chama o método para atualizar o pulo
+            player.update_jump(keys)
 
             player.move(dx, platforms)
             player.apply_gravity(platforms)
@@ -354,7 +373,6 @@ def main():
                     enemy.reset()
                 player.alive = True
                 if game_won:
-                    # Reinicia o jogo na primeira fase se ganhou o jogo
                     current_phase = 0
                     platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit = load_phase(current_phase)
                     game_won = False
@@ -367,22 +385,19 @@ def main():
         if player.alive and not game_won:
             for enemy in enemies:
                 if enemy.alive and player.rect.colliderect(enemy.rect):
-                    # Verifica se a colisão é com a parte superior do inimigo (cabeça)
                     if player.vel_y > 0 and player.rect.bottom - enemy.rect.top < 15:
-                        enemy.alive = False  # O jogador mata o inimigo
-                        player.vel_y = -JUMP_SPEED / 1.5  # Recuo do jogador após matar o inimigo
+                        enemy.alive = False
+                        player.vel_y = -JUMP_SPEED / 1.5
                     else:
-                        # O jogador morre se colidir com a parte inferior do inimigo
-                        if player.rect.bottom > enemy.rect.top:  # Verifica se a parte inferior do jogador está acima da parte superior do inimigo
-                            player.alive = False  # O jogador morre se colidir de outra forma
-                    break  # Sai do loop após verificar a colisão
+                        if player.rect.bottom > enemy.rect.top:
+                            player.alive = False
+                    break
 
-        # Controle portões para troca de fase ou retorno
         if gate_exit and player.rect.colliderect(gate_exit.rect):
             current_phase += 1
             if current_phase >= len(phases):
                 game_won = True
-                current_phase = len(phases) - 1  # Manter o índice na última fase
+                current_phase = len(phases) - 1
             else:
                 platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit = load_phase(current_phase)
                 player = Player()
@@ -391,12 +406,10 @@ def main():
                 fade_start_time = pygame.time.get_ticks()
 
         if gate_start and player.rect.colliderect(gate_start.rect):
-            # Voltar para a fase anterior
             if current_phase > 0:
                 current_phase -= 1
                 platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit = load_phase(current_phase)
                 player = Player()
-                # Posicionar player próximo do portão de saída da fase anterior para visualização consistente
                 player.x = 2200.0 if current_phase == 0 else 0.0
                 player.rect.x = int(player.x)
                 offset_x = max(player.rect.x - SCREEN_WIDTH // 2, 0)
@@ -437,9 +450,8 @@ def main():
         if player.alive:
             player.draw(SCREEN, offset_x)
 
-        # Renderizar e desenhar o texto da fase atual
         phase_text = font.render(f"Fase: {current_phase + 1}", True, WHITE)
-        SCREEN.blit(phase_text, (20, 40))  # Desenha o texto na posição (20, 40)
+        SCREEN.blit(phase_text, (20, 40))
 
         if not player.alive:
             game_over_text = font.render("Você morreu! Pressione R para reiniciar.", True, WHITE)
