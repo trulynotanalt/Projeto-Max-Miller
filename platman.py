@@ -8,7 +8,7 @@ pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Jogo do Platman com múltiplas fases e portões diferenciados")
+pygame.display.set_caption("Jogo do Platman com tela inicial")
 
 # Cores
 WHITE = (255, 255, 255)
