@@ -1,16 +1,57 @@
-import pygame, sys
-from config import SCREEN, SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLUE, BLACK, GREEN, DARK_GREEN, FPS, CLOCK, FADE_IN_DURATION
-from config import MOVE_SPEED, JUMP_SPEED
+# principal.py
+import pygame
+import sys
+from config import *
 from player import Player
 from fases import load_phase
-from tela import start_screen
+from plataformas import get_platform_texture
+from inimigo import Enemy  # (opcionalmente usado por load_phase)
+from portao import Gate    # (opcionalmente usado por load_phase)
 
-pygame.init()
+def start_screen():
+    play_music(INTRO_MUSIC, loops=-1)
+    try:
+        pygame.mixer.music.set_volume(0.3)
+    except Exception:
+        pass
+    font_title = pygame.font.SysFont(None, 70)
+    font_options = pygame.font.SysFont(None, 50)
+
+    title_text = font_title.render("Platman Game", True, WHITE)
+    play_text = font_options.render("Jogar", True, WHITE)
+    exit_text = font_options.render("Sair", True, WHITE)
+
+    title_rect = title_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+    play_rect = play_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 20))
+    exit_rect = exit_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 100))
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_rect.collidepoint(event.pos):
+                    return True
+                if exit_rect.collidepoint(event.pos):
+                    return False
+
+        SCREEN.fill(BLUE)
+        SCREEN.blit(title_text, title_rect)
+        SCREEN.blit(play_text, play_rect)
+        SCREEN.blit(exit_text, exit_rect)
+        pygame.display.flip()
+        CLOCK.tick(FPS)
 
 def main():
     if not start_screen():
         pygame.quit()
         sys.exit()
+
+    play_music(GAME_MUSIC, loops=-1)
+    try:
+        pygame.mixer.music.set_volume(0.3)
+    except Exception:
+        pass
 
     current_phase = 0
     platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit = load_phase(current_phase)
@@ -35,11 +76,14 @@ def main():
 
         if player.alive and not game_won:
             dx = 0
+            player.moving = False
             if keys[pygame.K_LEFT] or keys[pygame.K_a]:
                 dx = -MOVE_SPEED
             if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
                 dx = MOVE_SPEED
-            
+            if dx != 0:
+                player.moving = True
+
             if (keys[pygame.K_SPACE] or keys[pygame.K_w]) and player.on_ground:
                 player.jump()
             player.update_jump(keys)
@@ -54,6 +98,10 @@ def main():
             if keys[pygame.K_r]:
                 player = Player()
                 offset_x = 0
+                try:
+                    som_reset.play()
+                except Exception:
+                    pass
                 for enemy in enemies:
                     enemy.reset()
                 player.alive = True
@@ -80,9 +128,9 @@ def main():
 
         if gate_exit and player.rect.colliderect(gate_exit.rect):
             current_phase += 1
-            if current_phase >= 2:
+            if current_phase >= len(__import__("fases").fases):
                 game_won = True
-                current_phase = 1
+                current_phase = len(__import__("fases").fases) - 1
             else:
                 platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit = load_phase(current_phase)
                 player = Player()
@@ -111,17 +159,19 @@ def main():
 
         SCREEN.fill(BLUE)
 
-        for i, platform in enumerate(ground_platforms):
+        # --- desenhar ground platforms ---
+        for platform in ground_platforms:
             draw_rect = pygame.Rect(platform)
             draw_rect.x -= offset_x
-            color = DARK_GREEN if i % 2 == 0 else GREEN
-            pygame.draw.rect(SCREEN, color, draw_rect)
+            tex = get_platform_texture(draw_rect.width, draw_rect.height)
+            SCREEN.blit(tex, (draw_rect.x, draw_rect.y))
 
-        for i, platform in enumerate(other_platforms):
+        # --- desenhar other platforms ---
+        for platform in other_platforms:
             draw_rect = pygame.Rect(platform)
             draw_rect.x -= offset_x
-            color = GREEN if i % 2 == 0 else DARK_GREEN
-            pygame.draw.rect(SCREEN, color, draw_rect)
+            tex = get_platform_texture(draw_rect.width, draw_rect.height)
+            SCREEN.blit(tex, (draw_rect.x, draw_rect.y))
 
         if gate_start:
             gate_start.draw(SCREEN, offset_x)
@@ -131,6 +181,9 @@ def main():
 
         for enemy in enemies:
             enemy.draw(SCREEN, offset_x)
+
+        # --- atualizar animação do jogador ---
+        player.update_animation(dt)
 
         if player.alive:
             player.draw(SCREEN, offset_x)
@@ -164,6 +217,7 @@ def main():
 
         pygame.display.flip()
 
+    pygame.mixer.music.stop()
     pygame.quit()
     sys.exit()
 

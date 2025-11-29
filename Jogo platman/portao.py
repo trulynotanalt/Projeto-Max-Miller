@@ -1,8 +1,9 @@
+# portao.py
 import pygame
-from config import WHITE
+from config import PURPLE, WHITE
 
 class Gate:
-    def __init__(self, x, y, width=40, height=80, color=(128, 0, 128)):
+    def __init__(self, x, y, width=40, height=80, color=PURPLE):
         self.x = x
         self.y = y
         self.width = width

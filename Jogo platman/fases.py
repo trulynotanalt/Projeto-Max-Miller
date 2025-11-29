@@ -1,7 +1,8 @@
+# fases.py
 import pygame
-from config import SCREEN_HEIGHT, PURPLE, ORANGE
 from inimigo import Enemy
 from portao import Gate
+from config import SCREEN_HEIGHT, PURPLE, ORANGE
 
 phases = [
     {
@@ -29,27 +30,32 @@ phases = [
         "gate_exit_pos": (2300, SCREEN_HEIGHT - 40 - 80),
         "gate_exit_color": PURPLE,
     },
+
     {
         "ground_platforms": [
-            pygame.Rect(0, SCREEN_HEIGHT - 40, 200, 40),
-            
+            pygame.Rect(0, SCREEN_HEIGHT - 40, 300, 40),
+            pygame.Rect(400, SCREEN_HEIGHT - 40, 300, 40),
+            pygame.Rect(850, SCREEN_HEIGHT - 40, 400, 40),
+            pygame.Rect(1300, SCREEN_HEIGHT - 40, 400, 40),
+            pygame.Rect(1750, SCREEN_HEIGHT - 40, 400, 40),
+            pygame.Rect(2200, SCREEN_HEIGHT - 40, 350, 40),
         ],
         "other_platforms": [
-            pygame.Rect(300, 450, 100, 20),
-            pygame.Rect(500, 350, 140, 20),
-            pygame.Rect(750, 250, 140, 20),
-            pygame.Rect(1000, 500, 100, 20),
-            pygame.Rect(1250, 300, 140, 20),
-            pygame.Rect(1500, 250, 120, 20),
-            pygame.Rect(1800, 450, 150, 20),
-            pygame.Rect(2100, 350, 140, 20),
-            pygame.Rect(2380, 300, 150, 20),
+            pygame.Rect(100, 450, 100, 20),
+            pygame.Rect(300, 350, 140, 20),
+            pygame.Rect(550, 250, 140, 20),
+            pygame.Rect(800, 400, 100, 20),
+            pygame.Rect(1050, 300, 140, 20),
+            pygame.Rect(1300, 250, 120, 20),
+            pygame.Rect(1600, 450, 150, 20),
+            pygame.Rect(1900, 350, 140, 20),
+            pygame.Rect(2150, 300, 100, 20),
         ],
         "enemies_platform_indices": [1, 3, 5, 7],
         "enemies_speeds": [2.5, 1.7, 3, 2],
         "gate_start_pos": (10, SCREEN_HEIGHT - 40 - 80),
         "gate_start_color": ORANGE,
-        "gate_exit_pos": (2700, SCREEN_HEIGHT - 40 - 80),
+        "gate_exit_pos": (2600, SCREEN_HEIGHT - 40 - 80),
         "gate_exit_color": PURPLE,
     }
 ]

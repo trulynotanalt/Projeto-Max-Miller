@@ -1,7 +1,9 @@
 import pygame
-from config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLUE, CLOCK, FPS, SCREEN
+from config import SCREEN_WIDTH, SCREEN_HEIGHT, WHITE, BLUE, CLOCK, FPS, SCREEN, INTRO_MUSIC, play_music, GAME_MUSIC
 
 def start_screen():
+    play_music(INTRO_MUSIC, loops=-1)
+
     font_title = pygame.font.SysFont(None, 70)
     font_options = pygame.font.SysFont(None, 50)
 
