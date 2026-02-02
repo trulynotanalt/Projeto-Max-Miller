@@ -10,7 +10,7 @@ from config import (
 
 class Player:
     def __init__(self):
-        self.x = 1940.0
+        self.x = 30
         self.y = 600 - PLATMAN_HEIGHT - 50
         self.hitbox = pygame.Rect(int(self.x), int(self.y), PLATMAN_WIDTH, PLATMAN_HEIGHT)
         self.rect = pygame.Rect(int(self.x), int(self.y), PLATMAN_WIDTH, PLATMAN_HEIGHT)

@@ -2,8 +2,8 @@ import pygame
 from inimigo import Enemy, Boss
 from portao import Gate
 from config import SCREEN_HEIGHT, PURPLE, ORANGE, PORTAL_START_SPRITE, PORTAL_EXIT_SPRITE, PORTAL_START_SPRITE_SIZE, PORTAL_EXIT_SPRITE_SIZE, PORTAL_START_SPRITE_OFFSET, PORTAL_EXIT_SPRITE_OFFSET
-from espinho import RectVermelho
-from pulo import RectAzul
+from pulo import Pulo
+from platwoman import PlatWoman
 
 
 
@@ -70,18 +70,17 @@ phases = [
             (pygame.Rect(1400, 250, 120, 40), hit_other_x, -1, 0, 30, 0, -30),
             (pygame.Rect(1750, 450, 120, 40), hit_other_x, -1, 0, 30, 0, -30),
         ],
-        "rects_vermelhos": [
-            (590, SCREEN_HEIGHT - 90, 100, 90,'espinho.png'), #200, 410 == 150, 450
-            (350, 350, 40, 50,'espinho.jpeg'),
-        ],
-        "rects_azuis": [
-            (0, SCREEN_HEIGHT - 90, 100, 90,"sprites/doublejump.png"),
+        
+        "pulos": [
+            (1940, SCREEN_HEIGHT - 100, 100, 90,"sprites/doublejump.png"),
            #1940, SCREEN_HEIGHT - 100
         ],
+        
+        
 
 
-        "enemies_platform_indices": [1,2,3],
-        "enemies_speeds": [1.5,1.6,1.7],
+        "enemies_platform_indices": [1,2,3],#1,2,3
+        "enemies_speeds": [1.5,1.6,1.7],#1.5,1.6,1.7
         "gate_start_pos": None,
         "gate_exit_pos": (2080, SCREEN_HEIGHT-120),
         "gate_exit_color": PURPLE,
@@ -90,6 +89,12 @@ phases = [
     {
         "ground_platforms": [
             (pygame.Rect(0, SCREEN_HEIGHT - 40, 2000, 140), -1, -1, 0, 0, 0, 0),
+        ],
+        "platwoman": [
+            (1087, 130, 50, 80,"sprites/platwomanD.png"),
+        ],
+        "other_platforms": [
+            (pygame.Rect(1050, 200, 120, 40), hit_other_x, -1, 0, 30, 0, -30), # tipo 1
         ],
         
         "enemies_platform_indices": [],
@@ -134,14 +139,10 @@ def load_phase(phase_index):
         other_platforms.append(item)
         visual_platforms.append(rect_base)
 
+
     enemies = []
 
-    if phase_index == 1:
-        if ground_platforms:
-            ultima_plataforma = ground_platforms[-1]
-            boss_plataforma = ultima_plataforma[0] if isinstance(ultima_plataforma, tuple) else ultima_plataforma
-            enemies.append(Boss(boss_plataforma, speed=2))
-    else:
+    if phase_index != 1:
         for idx, spd in zip(
             phase_data.get("enemies_platform_indices", []),
             phase_data.get("enemies_speeds", [])
@@ -149,27 +150,29 @@ def load_phase(phase_index):
             if idx < len(platforms):
                 enemies.append(Enemy(platforms[idx], speed=spd))
 
-
-    rects_vermelhos = []
-    for data in phase_data.get("rects_vermelhos", []):
+    pulos = []
+    for data in phase_data.get("pulos", []):
         if len(data) == 5:
             x, y, w, h, img_name = data
-            rects_vermelhos.append(RectVermelho(x, y, w, h, img_name))
+            pulos.append(Pulo(x, y, w, h, img_name))
         else:
             x, y, w, h = data
-            rects_vermelhos.append(RectVermelho(x, y, w, h))
-    rects_azuis = []
-    for data in phase_data.get("rects_azuis", []):
+            pulos.append(Pulo(x, y, w, h))
+    platwoman = []
+    for data in phase_data.get("platwoman", []):
         if len(data) == 5:
             x, y, w, h, img_name = data
-            rects_azuis.append(RectAzul(x, y, w, h, img_name))
+            platwoman.append(PlatWoman(x, y, w, h, img_name))
         else:
             x, y, w, h = data
-            rects_azuis.append(RectAzul(x, y, w, h))
+            platwoman.append(PlatWoman(x, y, w, h))
 
     boss = None
-    if phase_index == 1:  # fase do boss
-        boss = Boss(800, 300)
+    if phase_index == 1: 
+        boss_plataforma_fake = pygame.Rect(800, 690, 200, 20)
+        boss = Boss(boss_plataforma_fake)
+
+
 
     gate_start = None
     gate_start_pos = phase_data.get("gate_start_pos", None)
@@ -203,13 +206,13 @@ def load_phase(phase_index):
         
     return (
         platforms,
-        ground_platforms,
-        other_platforms,
-        enemies,
-        gate_start,
+        ground_platforms, 
+        other_platforms, 
+        enemies, 
+        gate_start, 
         gate_exit,
-        rects_vermelhos,
-        rects_azuis, 
-        boss
+        boss, 
+        pulos, 
+        platwoman
     )
 

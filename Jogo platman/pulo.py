@@ -1,7 +1,7 @@
 import pygame
 from config import safe_load_sprite
 
-class RectAzul:
+class Pulo:
     def __init__(self, x, y, w, h, sprite_path='sprites/doublejump.png'):
         self.rect = pygame.Rect(x, y, w, h)
         self.active = True
@@ -25,3 +25,4 @@ class RectAzul:
                 (0, 120, 255),
                 (draw_x, draw_y, self.rect.w, self.rect.h)
             )
+

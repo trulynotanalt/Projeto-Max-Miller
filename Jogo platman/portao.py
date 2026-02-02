@@ -1,4 +1,3 @@
-# portao.py
 import pygame
 from config import PURPLE, WHITE, safe_load_sprite
 

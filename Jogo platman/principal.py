@@ -1,4 +1,4 @@
-# principal.py
+
 import pygame
 import sys
 from config import *
@@ -7,9 +7,9 @@ from fases import load_phase
 from plataformas import *
 from inimigo import Enemy 
 from portao import Gate    
-from espinho import RectVermelho
 from voz_comando import start_voice_listener, should_quit, consume_start, consume_restart, request_quit
-from pulo import RectAzul
+from pulo import Pulo
+
 
 PHASE2_MUSIC = "sons_musicas/bossmusica.mp3"
 pygame.mixer.music.set_volume(0.4)
@@ -43,7 +43,7 @@ def start_screen():
 
     
     PIXEL_SCALE = 3
-    UI_PURPLE = (200, 0, 255)  # roxo
+    UI_PURPLE = (200, 0, 255) 
 
     def render_pixel_text(text, base_size):
         f = pygame.font.SysFont(None, base_size)
@@ -125,7 +125,8 @@ def main():
         pass
 
     current_phase = 0
-    platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit, rects_vermelhos, rects_azuis, boss = load_phase(current_phase)
+    platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit,boss, pulos, platwoman = load_phase(current_phase)
+
 
 
     player = Player()
@@ -183,7 +184,7 @@ def main():
 
     def render_ui_text(msg: str, base_size: int = 18):
         f = pygame.font.SysFont(None, base_size)
-        s = f.render(msg, False, UI_PURPLE_LIGHT)  # antialias=False
+        s = f.render(msg, False, UI_PURPLE_LIGHT) 
         return pygame.transform.scale(s, (s.get_width() * PIXEL_UI_SCALE, s.get_height() * PIXEL_UI_SCALE))
 
     def draw_pixel_button(surface, rect, text_surf, hovered=False):
@@ -207,6 +208,8 @@ def main():
     pause_start_real = 0
     paused_total_ms = 0
     pause_snapshot = None
+    pause_msg = ""
+
 
     def game_ticks() -> int:
         
@@ -246,8 +249,8 @@ def main():
             pass
 
     def do_reset():
-       
-        nonlocal current_phase, platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit, rects_vermelhos, rects_azuis, boss
+        nonlocal current_phase
+        nonlocal platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit,boss, pulos, platwoman
         nonlocal player, offset_x, game_won, fading_in, fade_start_time, life_start_tick, last_life_time_ms
         nonlocal player_has_gun, bullets, gun_rect, gun_image
 
@@ -256,6 +259,7 @@ def main():
 
         player.tem_pulo_duplo = False
         player.usou_pulo_duplo = False
+        
 
 
        
@@ -277,12 +281,16 @@ def main():
                 enemy.reset()
             except Exception:
                 pass
+        
+        
+
 
         player.alive = True
 
         if game_won:
             current_phase = 0
-            platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit, rects_vermelhos, rects_azuis, boss = load_phase(current_phase)
+            platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit,boss, pulos, platwoman = load_phase(current_phase)
+
             spawn_gun_for_phase()
             game_won = False
 
@@ -324,7 +332,9 @@ def main():
                         pause_snapshot = SCREEN.copy()  
                     else:
                         paused = False
+                        pause_msg = ""
                         paused_total_ms += pygame.time.get_ticks() - pause_start_real
+
                     continue
 
                 if event.key == pygame.K_f and player_has_gun and player.alive and not game_won and not paused:
@@ -347,8 +357,11 @@ def main():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if paused:
                     if continue_btn.collidepoint(event.pos):
+                        
                         paused = False
+                        pause_msg = ""
                         paused_total_ms += pygame.time.get_ticks() - pause_start_real
+
                     elif restart_btn.collidepoint(event.pos):
                         paused = False
                         paused_total_ms += pygame.time.get_ticks() - pause_start_real
@@ -375,7 +388,7 @@ def main():
         if did_reset:
             continue
 
-        # --- PAUSE ---
+        
         if paused:
             if pause_snapshot is not None:
                 SCREEN.blit(pause_snapshot, (0, 0))
@@ -385,6 +398,10 @@ def main():
             pause_surf = render_ui_text("JOGO PAUSADO", base_size=22)
             pause_rect = pause_surf.get_rect(midbottom=(SCREEN_WIDTH // 2, continue_btn.top - 20))
             SCREEN.blit(pause_surf, pause_rect)
+            if pause_msg:
+                msg_surf = render_ui_text(pause_msg, base_size=16)
+                SCREEN.blit(msg_surf, (SCREEN_WIDTH // 2 - msg_surf.get_width() // 2, pause_rect.bottom + 10))
+
 
             mouse_pos = pygame.mouse.get_pos()
             draw_pixel_button(SCREEN, continue_btn, continue_surf, hovered=continue_btn.collidepoint(mouse_pos))
@@ -435,9 +452,13 @@ def main():
 
         for enemy in enemies:
             enemy.update(platforms)
-        for ra in rects_azuis:
-            if ra.active and player.rect.colliderect(ra.rect):
-                ra.active = False
+        if boss is not None and boss.alive and not game_won:
+             boss.update(platforms)
+
+        
+        for pl in pulos:
+            if pl.active and player.rect.colliderect(pl.rect):
+                pl.active = False
                 player.tem_pulo_duplo = True
 
 
@@ -457,46 +478,27 @@ def main():
                             last_life_time_ms = game_ticks() - life_start_tick
                             on_player_death()
                     break
-        # --- colisão com portões ---
-        # --- colisão com portão de saída (avança fase) ---
-        if player.alive and not game_won and gate_exit and player.rect.colliderect(gate_exit.rect):
-            current_phase += 1
+        if player.alive and not game_won and boss is not None and boss.alive:
+            if player.rect.colliderect(boss.rect):
+                if player.vel_y > 0 and (player.rect.bottom - boss.rect.top) < 15:
+                    boss.take_damage(1)
+                    player.vel_y = -JUMP_SPEED / 1.3
+                else:
+                    player.alive = False
+                    last_life_time_ms = game_ticks() - life_start_tick
+                    on_player_death()
 
-            if boss is not None and (not boss.alive or boss.hp <= 0):
-                game_won = True
-                current_phase = len(__import__("fases").phases) - 1
-            else:
-                platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit, rects_vermelhos, rects_azuis, boss = load_phase(current_phase)
-
-                bullets.clear()
-                spawn_gun_for_phase()
-
-                player = Player()
-
-                # 🔽 POSIÇÃO DE SPAWN AO ENTRAR NA NOVA FASE
-                player.x = 100.0
-                player.y = 600 - player.rect.height - 50
-                player.rect.x = int(player.x)
-                player.rect.y = int(player.y)
-
-                offset_x = 0
-                fading_in = True
-                fade_start_time = game_ticks()
-
-
-        # --- colisão com portão de entrada (volta fase) ---
+        if not game_won and boss is not None and (not boss.alive or boss.hp <= 0):
+            game_won = True
         if player.alive and not game_won and gate_start and player.rect.colliderect(gate_start.rect):
             if current_phase > 0:
                 current_phase -= 1
-
-                platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit, rects_vermelhos, rects_azuis, boss= = load_phase(current_phase)
+                platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit, boss, pulos, platwoman = load_phase(current_phase)
 
                 bullets.clear()
                 spawn_gun_for_phase()
 
                 player = Player()
-
-                # 🔽 POSIÇÃO DE SPAWN AO VOLTAR DE FASE
                 player.x = 1940.0 if current_phase == 0 else 0.0
                 player.y = 600 - player.rect.height - 50
                 player.rect.x = int(player.x)
@@ -507,23 +509,55 @@ def main():
                 fade_start_time = game_ticks()
 
 
-        # --- ajuste do offset da tela ---
+            
+
+    
+
+        
+
+        
+        if player.alive and not game_won and gate_exit and player.rect.colliderect(gate_exit.rect):
+            current_phase += 1
+
+            if current_phase >= len(__import__("fases").phases):
+                game_won = True
+                current_phase = len(__import__("fases").phases) - 1
+            else:
+                platforms, ground_platforms, other_platforms, enemies, gate_start, gate_exit,boss, pulos, platwoman = load_phase(current_phase)
+
+
+                bullets.clear()
+                spawn_gun_for_phase()
+
+                player = Player()
+                player.x = 100.0
+                player.y = 600 - player.rect.height - 50
+                player.rect.x = int(player.x)
+                player.rect.y = int(player.y)
+
+                offset_x = 0
+                fading_in = True
+                fade_start_time = game_ticks()
+
+
+
+        
         metade_tela = SCREEN_WIDTH // 2
         if player.rect.x - offset_x > metade_tela:
             offset_x = player.rect.x - metade_tela
         elif player.rect.x - offset_x < metade_tela and player.x > metade_tela:
             offset_x = player.rect.x - metade_tela
 
-        # Se o player entrar no X negativo (área secreta), a câmera acompanha para a esquerda
+        
         if player.rect.left < 0:
             offset_x = max(player.rect.x - metade_tela, MIN_OFFSET_X)
-        # permite câmera ir para a esquerda somente se o player estiver em X negativo
+       
         if player.rect.left >= 0 and offset_x < 0:
             offset_x = 0
         if player.rect.left < 0 and offset_x < MIN_OFFSET_X:
             offset_x = MIN_OFFSET_X
 
-        # --- desenhar plataformas ---
+        
         if current_phase == 1:
             GAME_BG_PATH = "sprites/salaboss.jpg"
             game_bg = safe_load_sprite(GAME_BG_PATH, (SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -536,49 +570,48 @@ def main():
             
 
         
-        # --- atualizar balas (somem ao colidir com qualquer coisa) ---
+        
         for bullet in bullets[:]:
             bullet.update()
 
-            # saiu muito longe
+           
             if bullet.rect.x < -500 or bullet.rect.x > 5000:
                 bullets.remove(bullet)
                 continue
 
             hit = False
 
-            # colisão com a parede invisível (x=0) quando ABAIXO da abertura
-            # (a parede não existe para Y <= 150)
+           
             if bullet.rect.left < LEFT_WALL_X and bullet.rect.top > LEFT_WALL_OPEN_Y:
                 hit = True
 
-            # colisão com plataformas (inclui hitboxes/invisíveis)
+            
             if not hit:
                 for p in platforms:
                     if bullet.rect.colliderect(p):
                         hit = True
                         break
 
-            # colisão com espinhos/retângulos vermelhos
-            if not hit:
-                for rv in rects_vermelhos:
-                    rrect = getattr(rv, 'rect', None)
-                    if rrect is not None and bullet.rect.colliderect(rrect):
-                        hit = True
-                        break
+           
+            
 
-            # colisão com portões
+           
             if not hit and gate_start and bullet.rect.colliderect(gate_start.rect):
                 hit = True
             if not hit and gate_exit and bullet.rect.colliderect(gate_exit.rect):
                 hit = True
 
-            # colisão com inimigos (a bala só some; não mata)
+            
+            if not hit and boss is not None and boss.alive and bullet.rect.colliderect(boss.rect):
+                boss.take_damage(boss.hp)  # mata na hora
+                hit = True
+
             if not hit:
                 for enemy in enemies:
                     if enemy.alive and bullet.rect.colliderect(enemy.rect):
                         hit = True
                         break
+            
 
             if hit:
                 bullets.remove(bullet)
@@ -596,7 +629,7 @@ def main():
             draw_rect = pygame.Rect(rect)
             draw_rect.x -= offset_x
 
-            # Área secreta (X negativo): invisível acima, mas plataforma preta a partir do y=150
+            
             if rect.x < 0:
                 if rect.y >= 150:
                     pygame.draw.rect(SCREEN, BLACK, draw_rect)
@@ -605,12 +638,14 @@ def main():
             tex = get_platform_texture(draw_rect.width, draw_rect.height, extra_w=extra_w, extra_h=extra_h)
             SCREEN.blit(tex, (draw_rect.x + img_off_x, draw_rect.y + img_off_y))
 
-        for rect_v in rects_vermelhos:
-            rect_v.draw(SCREEN, offset_x)
-        for ra in rects_azuis:
-            ra.draw(SCREEN, offset_x)
+        
+        for pl in pulos:
+            pl.draw(SCREEN, offset_x)
+        for pw in platwoman:
+            pw.draw(SCREEN, offset_x)
+        
 
-        # --- desenhar arma e balas ---
+        
         if gun_rect and gun_image:
             SCREEN.blit(gun_image, (gun_rect.x - offset_x, gun_rect.y))
 
@@ -621,22 +656,26 @@ def main():
 
 
 
-        # --- desenhar portões e inimigos já foi feito acima ---
+       
         if gate_start:
             gate_start.draw(SCREEN, offset_x)
         if gate_exit:
             gate_exit.draw(SCREEN, offset_x)
         for enemy in enemies:
             enemy.draw(SCREEN, offset_x)
+        if boss is not None:
+            boss.draw(SCREEN, offset_x)
 
-        # --- atualizar animação do jogador ---
+        
+
+       
         player.update_animation(dt)
         if player.alive:
             player.draw(SCREEN, offset_x)
-        # --- informações da fase / HUD (roxo claro + pixelado) ---
+        
         now = game_ticks()
 
-        # Sempre mostra fase e tempo total
+        
         phase_surf = render_ui_text(f"FASE: {current_phase + 1}", base_size=16)
         SCREEN.blit(phase_surf, (20, 40))
 
@@ -644,7 +683,7 @@ def main():
         total_surf = render_ui_text(f"TEMPO TOTAL: {format_time(total_time_ms)}", base_size=14)
         SCREEN.blit(total_surf, (20, 70))
 
-        # Tempo vivo (desde a última morte)
+        
         if player.alive and not game_won:
             alive_ms = now - life_start_tick
             alive_surf = render_ui_text(f"TEMPO VIVO: {format_time(alive_ms)}", base_size=14)
@@ -677,11 +716,15 @@ def main():
             total_surf_center = render_ui_text(f"TEMPO TOTAL: {format_time(total_time_ms)}", base_size=18)
             SCREEN.blit(total_surf_center, (SCREEN_WIDTH // 2 - total_surf_center.get_width() // 2, SCREEN_HEIGHT // 2 - 110))
 
+            ms_secreta = render_ui_text("O começo depois do fim ", base_size=22)
+            SCREEN.blit(ms_secreta, (SCREEN_WIDTH // 2 - ms_secreta.get_width() // 2, SCREEN_HEIGHT // 2 - 35))
+
+
             mouse_pos = pygame.mouse.get_pos()
             draw_pixel_button(SCREEN, restart_btn, restart_surf, hovered=restart_btn.collidepoint(mouse_pos))
             draw_pixel_button(SCREEN, exit_btn, exit_surf, hovered=exit_btn.collidepoint(mouse_pos))
 
-        # --- efeito de fade ---
+      
         if fading_in:
             current_time = game_ticks()
             elapsed = current_time - fade_start_time

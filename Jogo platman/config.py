@@ -1,4 +1,3 @@
-# config.py
 import pygame
 
 
@@ -164,3 +163,5 @@ def safe_load_sprite(path, size):
         s = pygame.Surface(size, pygame.SRCALPHA)
         s.fill((255, 0, 255, 150))
         return s
+    
+
