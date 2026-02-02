@@ -1,5 +1,0 @@
-from pulo import Pulo
-
-class Espinho(Pulo):
-    def __init__(self, x, y, w, h, sprite_path='sprites/espinho.png'):
-        super().__init__(x, y, w, h, sprite_path)
